@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Manajemen Pelanggan WiFi</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #print-thermal-area, #print-thermal-area * {
+        visibility: visible !important;
+      }
+      #print-thermal-area {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 58mm !important;
+        margin: 0 !important;
+        padding: 4px !important;
+        color: #000 !important;
+        background: #fff !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col custom-scrollbar">
+
+  <!-- ================= LAYAR LOGIN ================= -->
+  <div id="login-view" class="relative min-h-screen flex items-center justify-center p-4 bg-cover bg-center transition-all duration-500" style="background-image: url('https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1920&q=80');">
+    <!-- Overlay Transparan -->
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+
+    <div class="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+          <i class="fa-solid fa-wifi text-3xl"></i>
+        </div>
+        <h2 id="login-brand-title" class="text-2xl font-bold text-slate-800 tracking-tight">NEXA WIFI NET</h2>
+        <p class="text-sm text-slate-500 mt-1">Portal Manajemen Layanan Internet</p>
+      </div>
+
+      <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Username</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+              <i class="fa-solid fa-user text-sm"></i>
+            </span>
+            <input type="text" id="login-user" required autocomplete="username" placeholder="Masukkan username"
+              class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+              <i class="fa-solid fa-lock text-sm"></i>
+            </span>
+            <input type="password" id="login-pass" required autocomplete="current-password" placeholder="Masukkan password"
+              class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            <button type="button" onclick="togglePasswordVisibility('login-pass', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit"
+          class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/30 transition flex items-center justify-center gap-2">
+          <span>Masuk ke Dashboard</span>
+          <i class="fa-solid fa-arrow-right text-sm"></i>
+        </button>
+      </form>
+
+      <div class="mt-8 text-center border-t border-slate-100 pt-4 text-xs text-slate-400">
+        Default: <code>admin</code> / <code>admin123</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= APLIKASI UTAMA (SETELAH LOGIN) ================= -->
+  <div id="main-view" class="hidden min-h-screen flex flex-col md:flex-row bg-slate-100">
+    <!-- SIDEBAR -->
+    <aside class="w-full md:w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md">
+            <i class="fa-solid fa-wifi"></i>
+          </div>
+          <div>
+            <h1 id="app-brand-name" class="font-bold text-white text-base leading-tight">NEXA WIFI</h1>
+            <p class="text-[11px] text-blue-400 font-medium">ISP Management</p>
+          </div>
+        </div>
+        <button onclick="logout()" title="Keluar Akun" class="md:hidden text-slate-400 hover:text-rose-400 p-2">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+
+      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition text-white bg-blue-600 shadow-sm">
+          <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+          <span>Dashboard</span>
+        </button>
+
+        <button onclick="switchTab('pelanggan')" id="nav-pelanggan" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-users w-5 text-center"></i>
+          <span>Data Pelanggan</span>
+        </button>
+
+        <button onclick="switchTab('matriks')" id="nav-matriks" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-table-cells-large w-5 text-center"></i>
+          <span>Matriks Pelanggan</span>
+        </button>
+
+        <button onclick="switchTab('pembayaran')" id="nav-pembayaran" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-receipt w-5 text-center"></i>
+          <span>Pembayaran</span>
+        </button>
+
+        <button onclick="switchTab('kas-masuk')" id="nav-kas-masuk" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-wallet text-emerald-400 w-5 text-center"></i>
+          <span>Kas Masuk</span>
+        </button>
+
+        <button onclick="switchTab('kas-keluar')" id="nav-kas-keluar" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-money-bill-trend-up text-rose-400 w-5 text-center"></i>
+          <span>Kas Keluar</span>
+        </button>
+
+        <button onclick="switchTab('pengaturan')" id="nav-pengaturan" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-sliders w-5 text-center"></i>
+          <span>Pengaturan</span>
+        </button>
+      </nav>
+
+      <div class="p-4 border-t border-slate-800 hidden md:block">
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 text-slate-400">
+            <i class="fa-solid fa-circle-user text-blue-400 text-sm"></i>
+            <span id="current-username" class="font-medium text-slate-200">Admin</span>
+          </div>
+          <button onclick="logout()" class="text-rose-400 hover:text-rose-300 font-medium transition flex items-center gap-1">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Keluar</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-screen">
+      <!-- TOPBAR -->
+      <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+        <div>
+          <h2 id="topbar-title" class="text-lg font-bold text-slate-800">Dashboard Ringkasan</h2>
+          <p id="topbar-subtitle" class="text-xs text-slate-500">Statistik real-time operasional jaringan</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="refreshCurrentTab()" title="Muat Ulang Data" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-rotate"></i>
+            <span class="hidden sm:inline">Segarkan</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="p-6 space-y-6 flex-1">
+
+        <!-- TAB 1: DASHBOARD -->
+        <section id="tab-dashboard" class="tab-content space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Card 1 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-medium text-slate-500 uppercase">Pelanggan Aktif</p>
+                  <h3 id="stat-pelanggan-aktif" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-user-check"></i>
+                </div>
+              </div>
+              <p class="text-xs text-slate-400 mt-3">Total terdaftar: <span id="stat-total-pelanggan">0</span> orang</p>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-medium text-slate-500 uppercase">Menunggak Bulan Ini</p>
+                  <h3 id="stat-menunggak" class="text-2xl font-bold text-rose-600 mt-1">0</h3>
+                </div>
+                <div class="w-11 h-11 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-user-xmark"></i>
+                </div>
+              </div>
+              <p class="text-xs text-slate-400 mt-3">Belum lunas periode berjalan</p>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-medium text-slate-500 uppercase">Penerimaan Bulan Ini</p>
+                  <h3 id="stat-bayar-bulan" class="text-xl font-bold text-blue-600 mt-1">Rp 0</h3>
+                </div>
+                <div class="w-11 h-11 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+              </div>
+              <p id="stat-periode-tagihan" class="text-xs text-slate-400 mt-3">Periode berjalan</p>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-medium text-slate-500 uppercase">Saldo Kas Bersih</p>
+                  <h3 id="stat-saldo-kas" class="text-xl font-bold text-slate-800 mt-1">Rp 0</h3>
+                </div>
+                <div class="w-11 h-11 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+              </div>
+              <p class="text-xs text-slate-400 mt-3">Kas Masuk - Kas Keluar</p>
+            </div>
+          </div>
+
+          <!-- Ringkasan Kas & Riwayat Terakhir -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h4 class="font-bold text-slate-800 text-sm">Akumulasi Arus Kas</h4>
+              <div class="p-4 bg-emerald-50 rounded-xl flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-semibold text-emerald-800">Total Kas Masuk</span>
+                  <h5 id="stat-total-masuk" class="text-lg font-bold text-emerald-700">Rp 0</h5>
+                </div>
+                <i class="fa-solid fa-arrow-down text-emerald-500 text-xl"></i>
+              </div>
+              <div class="p-4 bg-rose-50 rounded-xl flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-semibold text-rose-800">Total Kas Keluar</span>
+                  <h5 id="stat-total-keluar" class="text-lg font-bold text-rose-700">Rp 0</h5>
+                </div>
+                <i class="fa-solid fa-arrow-up text-rose-500 text-xl"></i>
+              </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="font-bold text-slate-800 text-sm">Riwayat Pembayaran Terbaru</h4>
+                <button onclick="switchTab('pembayaran')" class="text-xs text-blue-600 font-semibold hover:underline">Lihat Semua</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-500 uppercase">
+                    <tr>
+                      <th class="p-2.5">Tgl</th>
+                      <th class="p-2.5">Pelanggan</th>
+                      <th class="p-2.5">Periode</th>
+                      <th class="p-2.5">Jumlah</th>
+                      <th class="p-2.5 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-recent-table" class="divide-y divide-slate-100">
+                    <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data pembayaran...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: DATA PELANGGAN -->
+        <section id="tab-pelanggan" class="tab-content hidden space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2 flex-1 max-w-md">
+              <div class="relative w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                <input type="text" id="filter-pelanggan-search" oninput="renderTablePelanggan()" placeholder="Cari nama, ID, alamat, WA..."
+                  class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <select id="filter-pelanggan-status" onchange="renderTablePelanggan()" class="py-2 px-3 bg-white border border-slate-200 rounded-xl text-xs outline-none">
+                <option value="">Semua Status</option>
+                <option value="Aktif">Aktif</option>
+                <option value="Isolir">Isolir</option>
+                <option value="Berhenti">Berhenti</option>
+              </select>
+            </div>
+            <button onclick="openModalPelanggan()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+              <i class="fa-solid fa-plus"></i>
+              <span>Tambah Pelanggan</span>
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">ID / Nama</th>
+                    <th class="p-3">Alamat</th>
+                    <th class="p-3">WhatsApp</th>
+                    <th class="p-3">Paket & Tarif</th>
+                    <th class="p-3">Jatuh Tempo</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="table-pelanggan-body" class="divide-y divide-slate-100">
+                  <tr><td colspan="7" class="p-6 text-center text-slate-400">Memuat data pelanggan...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: MATRIKS PELANGGAN -->
+        <section id="tab-matriks" class="tab-content hidden space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <h4 class="font-bold text-slate-700 text-xs mb-3 uppercase flex items-center gap-2">
+                <i class="fa-solid fa-signal text-blue-500"></i> Distribusi Status
+              </h4>
+              <div class="space-y-2 text-xs" id="matriks-status-container">
+                <!-- Disuntikkan JS -->
+              </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <h4 class="font-bold text-slate-700 text-xs mb-3 uppercase flex items-center gap-2">
+                <i class="fa-solid fa-cubes text-purple-500"></i> Distribusi Paket WiFi
+              </h4>
+              <div class="space-y-2 text-xs" id="matriks-paket-container">
+                <!-- Disuntikkan JS -->
+              </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <h4 class="font-bold text-slate-700 text-xs mb-3 uppercase flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation text-amber-500"></i> Status Tagihan Bulan Ini
+              </h4>
+              <div class="space-y-2 text-xs" id="matriks-tagihan-container">
+                <!-- Disuntikkan JS -->
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h4 class="font-bold text-slate-800 text-sm">Daftar Pelanggan Menunggak (Perhatian Segera)</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase">
+                  <tr>
+                    <th class="p-3">Pelanggan</th>
+                    <th class="p-3">WhatsApp</th>
+                    <th class="p-3">Paket</th>
+                    <th class="p-3">Tagihan</th>
+                    <th class="p-3 text-right">Tindakan Cepat</th>
+                  </tr>
+                </thead>
+                <tbody id="table-matriks-menunggak" class="divide-y divide-slate-100">
+                  <tr><td colspan="5" class="p-4 text-center text-slate-400">Semua pelanggan telah melunasi tagihan bulan ini!</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: PEMBAYARAN -->
+        <section id="tab-pembayaran" class="tab-content hidden space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="relative max-w-sm w-full">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+              <input type="text" id="filter-bayar-search" oninput="renderTablePembayaran()" placeholder="Cari nama, ID, invoice..."
+                class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button onclick="openModalBayar()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+              <i class="fa-solid fa-plus"></i>
+              <span>Catat Pembayaran Baru</span>
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">No Invoice</th>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Pelanggan</th>
+                    <th class="p-3">Periode</th>
+                    <th class="p-3">Jumlah</th>
+                    <th class="p-3">Metode</th>
+                    <th class="p-3 text-right">Struk / WA</th>
+                  </tr>
+                </thead>
+                <tbody id="table-pembayaran-body" class="divide-y divide-slate-100">
+                  <tr><td colspan="7" class="p-6 text-center text-slate-400">Memuat data pembayaran...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: KAS MASUK -->
+        <section id="tab-kas-masuk" class="tab-content hidden space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-sm">Buku Kas Masuk (Penerimaan)</h3>
+            <button onclick="openModalKas('Masuk')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition">
+              <i class="fa-solid fa-plus"></i>
+              <span>Tambah Kas Masuk</span>
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">ID Kas</th>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Kategori</th>
+                    <th class="p-3">Jumlah</th>
+                    <th class="p-3">Keterangan</th>
+                    <th class="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="table-kas-masuk-body" class="divide-y divide-slate-100">
+                  <tr><td colspan="6" class="p-6 text-center text-slate-400">Memuat data kas masuk...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: KAS KELUAR -->
+        <section id="tab-kas-keluar" class="tab-content hidden space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-sm">Buku Kas Keluar (Pengeluaran Operasional)</h3>
+            <button onclick="openModalKas('Keluar')" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition">
+              <i class="fa-solid fa-plus"></i>
+              <span>Tambah Kas Keluar</span>
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">ID Kas</th>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Kategori</th>
+                    <th class="p-3">Jumlah</th>
+                    <th class="p-3">Keterangan</th>
+                    <th class="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="table-kas-keluar-body" class="divide-y divide-slate-100">
+                  <tr><td colspan="6" class="p-6 text-center text-slate-400">Memuat data kas keluar...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 7: PENGATURAN -->
+        <section id="tab-pengaturan" class="tab-content hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Form Identitas Usaha & Latar Login -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-2 flex items-center gap-2">
+                <i class="fa-solid fa-building text-blue-600"></i> Identitas Usaha & Latar Login
+              </h4>
+              <div class="space-y-3 text-xs">
+                <div>
+                  <label class="block font-semibold text-slate-600 mb-1">Nama Usaha / ISP</label>
+                  <input type="text" id="setting-nama-usaha" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-600 mb-1">Alamat Usaha</label>
+                  <input type="text" id="setting-alamat-usaha" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-600 mb-1">Nomor Kontak / WhatsApp CS</label>
+                  <input type="text" id="setting-kontak-usaha" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-600 mb-1">Catatan Kaki Struk (Footer)</label>
+                  <input type="text" id="setting-footer-struk" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-600 mb-1">URL Gambar Latar Belakang Login</label>
+                  <div class="flex gap-2">
+                    <input type="url" id="setting-bg-login" placeholder="https://images.unsplash.com/..." class="flex-1 p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                    <button type="button" onclick="previewBackgroundSetting()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-xl font-medium">Uji</button>
+                  </div>
+                  <p class="text-[10px] text-slate-400 mt-1">Bisa menggunakan link Unsplash, Google Drive publik, dll.</p>
+                </div>
+                <button onclick="savePengaturanUmum()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-sm transition">
+                  Simpan Identitas & Background
+                </button>
+              </div>
+            </div>
+
+            <!-- Ganti Password & Username -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h4 class="font-bold text-slate-800 text-sm border-b pb-2 flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-rose-600"></i> Keamanan & Kredensial Login
+              </h4>
+              <form onsubmit="handleGantiPassword(event)" class="space-y-3 text-xs">
+                <div>
+                  <label class="block font-semibold text-slate-600 mb-1">Password Lama</label>
+                  <input type="password" id="chg-pass-old" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-600 mb-1">Username Baru</label>
+                  <input type="text" id="chg-user-new" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-600 mb-1">Password Baru (min. 6 karakter)</label>
+                  <input type="password" id="chg-pass-new" minlength="6" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-semibold shadow-sm transition">
+                  Perbarui Username & Password
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Pengaturan Paket WiFi -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b pb-2">
+              <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-box-open text-purple-600"></i> Kelola Paket WiFi
+              </h4>
+              <button onclick="openModalPaket()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold transition">
+                <i class="fa-solid fa-plus mr-1"></i> Tambah Paket
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase">
+                  <tr>
+                    <th class="p-2.5">ID Paket</th>
+                    <th class="p-2.5">Nama Paket</th>
+                    <th class="p-2.5">Kecepatan</th>
+                    <th class="p-2.5">Harga Bulanan</th>
+                    <th class="p-2.5 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="table-paket-body" class="divide-y divide-slate-100">
+                  <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat paket WiFi...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= MODAL TAMBAH/EDIT PELANGGAN ================= -->
+  <div id="modal-pelanggan" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-4 bg-slate-900 text-white flex justify-between items-center">
+        <h3 id="modal-pelanggan-title" class="font-bold text-sm">Tambah Pelanggan Baru</h3>
+        <button onclick="closeModalPelanggan()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleSavePelanggan(event)" class="p-5 overflow-y-auto space-y-3 text-xs flex-1">
+        <input type="hidden" id="cust-id">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Nama Lengkap *</label>
+          <input type="text" id="cust-nama" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Alamat Lengkap *</label>
+          <textarea id="cust-alamat" rows="2" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Nomor WhatsApp (Contoh: 08123456789) *</label>
+          <input type="tel" id="cust-wa" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Pilihan Paket *</label>
+            <select id="cust-paket" onchange="syncPaketPriceToForm()" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+              <!-- Opsi Paket -->
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Biaya Bulanan (Rp) *</label>
+            <input type="number" id="cust-biaya" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Tanggal Pasang *</label>
+            <input type="date" id="cust-pasang" onchange="autoCalculateDueDate(this.value)" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Tanggal Jatuh Tempo *</label>
+            <input type="date" id="cust-tempo" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Status Layanan</label>
+            <select id="cust-status" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+              <option value="Aktif">Aktif</option>
+              <option value="Isolir">Isolir</option>
+              <option value="Berhenti">Berhenti</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Catatan Tambahan</label>
+            <input type="text" id="cust-catatan" placeholder="Port ODP / Lokasi router" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+          </div>
+        </div>
+        <div class="pt-3 border-t flex justify-end gap-2">
+          <button type="button" onclick="closeModalPelanggan()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium">Batal</button>
+          <button type="submit" id="btn-save-cust" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold">Simpan Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL TRANSAKSI PEMBAYARAN ================= -->
+  <div id="modal-bayar" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border overflow-hidden">
+      <div class="p-4 bg-emerald-600 text-white flex justify-between items-center">
+        <h3 class="font-bold text-sm">Catat Pembayaran Tagihan</h3>
+        <button onclick="closeModalBayar()" class="text-emerald-100 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleSavePembayaran(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Pilih Pelanggan *</label>
+          <select id="bayar-cust-select" onchange="syncCustomerToPaymentForm()" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+            <option value="">-- Pilih Pelanggan --</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Tanggal Bayar *</label>
+            <input type="date" id="bayar-tgl" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Periode Tagihan *</label>
+            <input type="month" id="bayar-periode" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Jumlah Bayar (Rp) *</label>
+            <input type="number" id="bayar-jumlah" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none font-bold text-blue-600">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Metode Bayar *</label>
+            <select id="bayar-metode" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+              <option value="Tunai">Tunai / Cash</option>
+              <option value="Transfer Bank">Transfer Bank</option>
+              <option value="QRIS">QRIS</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Keterangan</label>
+          <input type="text" id="bayar-ket" placeholder="Lunas / Diterima di kantor" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+        </div>
+        <div class="pt-3 border-t flex justify-end gap-2">
+          <button type="button" onclick="closeModalBayar()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium">Batal</button>
+          <button type="submit" id="btn-submit-bayar" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold">Proses & Cetak Struk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL TRANSAKSI KAS ================= -->
+  <div id="modal-kas" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border overflow-hidden">
+      <div id="modal-kas-header" class="p-4 bg-slate-900 text-white flex justify-between items-center">
+        <h3 id="modal-kas-title" class="font-bold text-sm">Tambah Kas</h3>
+        <button onclick="closeModalKas()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleSaveKas(event)" class="p-5 space-y-3 text-xs">
+        <input type="hidden" id="kas-jenis">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Tanggal *</label>
+            <input type="date" id="kas-tanggal" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Jumlah (Rp) *</label>
+            <input type="number" id="kas-jumlah" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none font-bold">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Kategori Kas *</label>
+          <select id="kas-kategori-select" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+            <!-- Disuntikkan JS -->
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Keterangan / Rincian *</label>
+          <textarea id="kas-keterangan" rows="2" required placeholder="Catatan transaksi operasional..." class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none"></textarea>
+        </div>
+        <div class="pt-3 border-t flex justify-end gap-2">
+          <button type="button" onclick="closeModalKas()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium">Batal</button>
+          <button type="submit" id="btn-save-kas" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold">Simpan Entri Kas</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL PAKET WIFI ================= -->
+  <div id="modal-paket" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border overflow-hidden">
+      <div class="p-4 bg-purple-600 text-white flex justify-between items-center">
+        <h3 id="modal-paket-title" class="font-bold text-sm">Tambah Paket WiFi</h3>
+        <button onclick="closeModalPaket()" class="text-purple-200 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleSavePaket(event)" class="p-5 space-y-3 text-xs">
+        <input type="hidden" id="paket-id">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Nama Paket *</label>
+          <input type="text" id="paket-nama" placeholder="Contoh: Paket Home 20 Mbps" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Kecepatan *</label>
+          <input type="text" id="paket-speed" placeholder="Contoh: 20 Mbps" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Harga Bulanan (Rp) *</label>
+          <input type="number" id="paket-harga" placeholder="200000" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none">
+        </div>
+        <div class="pt-3 border-t flex justify-end gap-2">
+          <button type="button" onclick="closeModalPaket()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold">Simpan Paket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL PRATINJAU STRUK THERMAL ================= -->
+  <div id="modal-struk" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-3 bg-slate-800 text-white flex justify-between items-center no-print">
+        <h3 class="font-bold text-xs flex items-center gap-1.5"><i class="fa-solid fa-print"></i> Pratinjau Struk Thermal</h3>
+        <button onclick="closeModalStruk()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Area Kertas Thermal -->
+      <div class="p-4 overflow-y-auto bg-slate-50 flex-1 flex justify-center">
+        <div id="print-thermal-area" class="w-full max-w-[280px] bg-white p-4 border border-dashed border-slate-300 shadow-sm text-slate-800 font-mono text-[11px] leading-tight">
+          <div class="text-center pb-2 border-b border-dashed border-slate-400">
+            <h4 id="struk-nama-usaha" class="font-bold text-xs uppercase tracking-wide">NEXA WIFI NET</h4>
+            <p id="struk-alamat-usaha" class="text-[9px] text-slate-500">Jl. Merdeka No. 88, Kota Baru</p>
+            <p id="struk-kontak-usaha" class="text-[9px] text-slate-500">CS: 081234567890</p>
+          </div>
+
+          <div class="py-2 border-b border-dashed border-slate-400 space-y-1 text-[10px]">
+            <div class="flex justify-between">
+              <span>No. Trx:</span>
+              <span id="struk-no-trx" class="font-bold">TRX-001</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Tanggal:</span>
+              <span id="struk-tgl">2026-09-25</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Pelanggan:</span>
+              <span id="struk-pelanggan" class="font-semibold">Budi Santoso</span>
+            </div>
+            <div class="flex justify-between">
+              <span>ID Cust:</span>
+              <span id="struk-id-cust">CUST-001</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Periode:</span>
+              <span id="struk-periode">2026-09</span>
+            </div>
+          </div>
+
+          <div class="py-2 border-b border-dashed border-slate-400 space-y-1">
+            <div class="flex justify-between">
+              <span>Layanan Internet</span>
+              <span id="struk-jumlah" class="font-bold">Rp 150.000</span>
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-500">
+              <span>Metode:</span>
+              <span id="struk-metode">Tunai</span>
+            </div>
+          </div>
+
+          <div class="text-center pt-2 text-[9px] text-slate-600">
+            <p id="struk-footer">Terima kasih atas pembayaran Anda.</p>
+            <p class="font-bold mt-1">*** LUNAS ***</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-100 border-t flex gap-2 no-print">
+        <button onclick="kirimStrukWhatsApp()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+          <i class="fa-brands fa-whatsapp text-sm"></i> Kirim WA
+        </button>
+        <button onclick="window.print()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-print"></i> Cetak Struk
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL NOTIFIKASI KUSTOM (PENGGANTI ALERT/CONFIRM) ================= -->
+  <div id="custom-modal-alert" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-5 border text-center space-y-3">
+      <div id="cmodal-icon-wrapper" class="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl bg-blue-100 text-blue-600">
+        <i id="cmodal-icon" class="fa-solid fa-circle-info"></i>
+      </div>
+      <h4 id="cmodal-title" class="font-bold text-sm text-slate-800">Pemberitahuan</h4>
+      <p id="cmodal-message" class="text-xs text-slate-600 leading-relaxed">Pesan konfirmasi...</p>
+      <div id="cmodal-actions" class="pt-2 flex justify-center gap-2">
+        <button onclick="closeCustomAlert()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Safe Storage Helper untuk menghindari bug iFrame */
+    const memoryStore = {};
+    const safeStorage = {
+      getItem(key) {
+        try {
+          return localStorage.getItem(key) || memoryStore[key] || null;
+        } catch(e) {
+          return memoryStore[key] || null;
+        }
+      },
+      setItem(key, val) {
+        try { localStorage.setItem(key, val); } catch(e) {}
+        memoryStore[key] = val;
+      },
+      removeItem(key) {
+        try { localStorage.removeItem(key); } catch(e) {}
+        delete memoryStore[key];
+      }
+    };
+
+    /* Global State */
+    let currentToken = safeStorage.getItem('wifi_token');
+    let currentUsername = safeStorage.getItem('wifi_user') || 'Admin';
+    let appSettings = {};
+    let dataPelangganList = [];
+    let dataPembayaranList = [];
+    let dataKasList = [];
+    let dataPaketList = [];
+    let dataKategoriList = [];
+    let lastActiveStruk = null;
+
+    /* Backend Runner Bridge */
+    function callBackend(actionName, ...args) {
+      return new Promise((resolve, reject) => {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(res => resolve(res))
+            .withFailureHandler(err => reject(err))[actionName](...args);
+        } else {
+          // Simulator jika dibuka di luar lingkungan Apps Script
+          console.warn('Mode Simulator: google.script.run tidak terdeteksi.');
+          setTimeout(() => {
+            if (actionName === 'apiLogin') {
+              resolve({ success: true, token: 'mock-token', username: 'admin' });
+            } else if (actionName === 'apiGetPengaturan') {
+              resolve({
+                success: true,
+                data: {
+                  settings: { NAMA_USAHA: 'NEXA WIFI NET', KONTAK_USAHA: '081234567890' },
+                  paketList: [{ 'ID Paket': 'PKT-01', 'Nama Paket': 'Home 10M', 'Kecepatan': '10 Mbps', 'Harga': 150000 }],
+                  kategoriList: []
+                }
+              });
+            } else {
+              resolve({ success: true, data: [] });
+            }
+          }, 300);
+        }
+      });
+    }
+
+    /* Inisialisasi Aplikasi Saat Memuat Halaman */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Muat background login tersimpan
+      const cachedBg = safeStorage.getItem('wifi_bg_login');
+      if (cachedBg) applyLoginBackground(cachedBg);
+
+      // Inisialisasi tanggal default di formulir
+      const todayStr = new Date().toISOString().split('T')[0];
+      const monthStr = todayStr.substring(0, 7);
+      if (document.getElementById('bayar-tgl')) document.getElementById('bayar-tgl').value = todayStr;
+      if (document.getElementById('bayar-periode')) document.getElementById('bayar-periode').value = monthStr;
+      if (document.getElementById('kas-tanggal')) document.getElementById('kas-tanggal').value = todayStr;
+      if (document.getElementById('cust-pasang')) {
+        document.getElementById('cust-pasang').value = todayStr;
+        autoCalculateDueDate(todayStr);
+      }
+
+      // Periksa Sesi Login
+      if (currentToken) {
+        showMainApp();
+      } else {
+        showLoginView();
+        loadPublicSettings();
+      }
+    });
+
+    function showLoginView() {
+      document.getElementById('login-view').classList.remove('hidden');
+      document.getElementById('main-view').classList.add('hidden');
+    }
+
+    function showMainApp() {
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('main-view').classList.remove('hidden');
+      document.getElementById('current-username').innerText = currentUsername;
+      switchTab('dashboard');
+      loadAllAppData();
+    }
+
+    function logout() {
+      showCustomConfirm('Konfirmasi Keluar', 'Apakah Anda yakin ingin keluar dari sistem?', () => {
+        safeStorage.removeItem('wifi_token');
+        currentToken = null;
+        showLoginView();
+      });
+    }
+
+    /* Autentikasi Login */
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const user = document.getElementById('login-user').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      const btn = document.getElementById('btn-login-submit');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Memverifikasi...</span>';
+
+      try {
+        const res = await callBackend('apiLogin', user, pass);
+        if (res && res.success) {
+          currentToken = res.token;
+          currentUsername = res.username;
+          safeStorage.setItem('wifi_token', currentToken);
+          safeStorage.setItem('wifi_user', currentUsername);
+          showMainApp();
+        } else {
+          showCustomAlert('Gagal Masuk', (res && res.message) || 'Username atau password salah!', 'error');
+        }
+      } catch (err) {
+        showCustomAlert('Error Server', 'Terjadi kesalahan: ' + err.toString(), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Masuk ke Dashboard</span><i class="fa-solid fa-arrow-right text-sm"></i>';
+      }
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    /* Navigasi Tab SPA */
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('bg-blue-600', 'text-white');
+        el.classList.add('text-slate-400');
+      });
+
+      const activeTab = document.getElementById('tab-' + tabId);
+      const activeNav = document.getElementById('nav-' + tabId);
+      if (activeTab) activeTab.classList.remove('hidden');
+      if (activeNav) {
+        activeNav.classList.add('bg-blue-600', 'text-white');
+        activeNav.classList.remove('text-slate-400');
+      }
+
+      // Update Judul Topbar
+      const titles = {
+        'dashboard': ['Dashboard Ringkasan', 'Statistik real-time operasional jaringan'],
+        'pelanggan': ['Data Pelanggan', 'Kelola database pelanggan WiFi Anda'],
+        'matriks': ['Matriks Pelanggan', 'Analisis segmentasi status dan tunggakan tagihan'],
+        'pembayaran': ['Catatan Pembayaran', 'Riwayat transaksi & cetak struk thermal'],
+        'kas-masuk': ['Buku Kas Masuk', 'Penerimaan pembayaran & pendapatan lainnya'],
+        'kas-keluar': ['Buku Kas Keluar', 'Pengeluaran operasional jaringan & upstream'],
+        'pengaturan': ['Pengaturan Aplikasi', 'Konfigurasi profil usaha, paket, dan akun']
+      };
+
+      if (titles[tabId]) {
+        document.getElementById('topbar-title').innerText = titles[tabId][0];
+        document.getElementById('topbar-subtitle').innerText = titles[tabId][1];
+      }
+    }
+
+    function refreshCurrentTab() {
+      loadAllAppData();
+    }
+
+    /* Pemuatan Data dari Backend */
+    async function loadPublicSettings() {
+      try {
+        const res = await callBackend('apiGetPengaturan', '');
+        if (res && res.success && res.data.settings) {
+          const bg = res.data.settings['BACKGROUND_LOGIN'];
+          if (bg) {
+            applyLoginBackground(bg);
+            safeStorage.setItem('wifi_bg_login', bg);
+          }
+          if (res.data.settings['NAMA_USAHA']) {
+            document.getElementById('login-brand-title').innerText = res.data.settings['NAMA_USAHA'];
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function loadAllAppData() {
+      try {
+        // 1. Pengaturan & Paket
+        const resPeng = await callBackend('apiGetPengaturan', currentToken);
+        if (resPeng && resPeng.success) {
+          appSettings = resPeng.data.settings || {};
+          dataPaketList = resPeng.data.paketList || [];
+          dataKategoriList = resPeng.data.kategoriList || [];
+          applySettingsToUI();
+          renderTablePaket();
+          renderPaketOptions();
+        }
+
+        // 2. Data Pelanggan
+        const resCust = await callBackend('apiGetPelanggan', currentToken);
+        if (resCust && resCust.success) {
+          dataPelangganList = resCust.data || [];
+          renderTablePelanggan();
+          populateCustomerSelectForPayment();
+        }
+
+        // 3. Data Pembayaran
+        const resBayar = await callBackend('apiGetPembayaran', currentToken);
+        if (resBayar && resBayar.success) {
+          dataPembayaranList = resBayar.data || [];
+          renderTablePembayaran();
+        }
+
+        // 4. Data Kas
+        const resKas = await callBackend('apiGetKas', currentToken);
+        if (resKas && resKas.success) {
+          dataKasList = resKas.data || [];
+          renderTableKas();
+        }
+
+        // 5. Dashboard Data
+        const resDash = await callBackend('apiGetDashboardData', currentToken);
+        if (resDash && resDash.success) {
+          updateDashboardUI(resDash.data);
+          updateMatriksUI();
+        }
+      } catch (err) {
+        console.error('Gagal memuat data:', err);
+      }
+    }
+
+    /* Format Rupiah Helper */
+    function formatRp(num) {
+      return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+    }
+
+    /* Update Dashboard */
+    function updateDashboardUI(data) {
+      document.getElementById('stat-pelanggan-aktif').innerText = data.pelangganAktif || 0;
+      document.getElementById('stat-total-pelanggan').innerText = data.totalPelanggan || 0;
+      document.getElementById('stat-menunggak').innerText = data.menunggakBulanIni || 0;
+      document.getElementById('stat-bayar-bulan').innerText = formatRp(data.bayarBulanIni);
+      document.getElementById('stat-saldo-kas').innerText = formatRp(data.saldoKas);
+      document.getElementById('stat-total-masuk').innerText = formatRp(data.totalKasMasuk);
+      document.getElementById('stat-total-keluar').innerText = formatRp(data.totalKasKeluar);
+      document.getElementById('stat-periode-tagihan').innerText = 'Periode: ' + (data.currentPeriod || '-');
+
+      // Riwayat Pembayaran Terbaru
+      const tbody = document.getElementById('dashboard-recent-table');
+      if (!data.riwayatBayarTerbaru || data.riwayatBayarTerbaru.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada transaksi pembayaran.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.riwayatBayarTerbaru.map(item => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-2.5 text-slate-500">${item['Tgl Bayar'] || '-'}</td>
+          <td class="p-2.5 font-semibold text-slate-800">${item['Nama Pelanggan'] || '-'}</td>
+          <td class="p-2.5 text-slate-500">${item['Periode Tagihan'] || '-'}</td>
+          <td class="p-2.5 font-bold text-emerald-600">${formatRp(item['Jumlah Bayar'])}</td>
+          <td class="p-2.5 text-right">
+            <button onclick="previewStruk('${item['ID Transaksi']}')" class="px-2 py-1 bg-slate-100 hover:bg-blue-50 text-blue-600 rounded font-medium">Struk</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /* Update Matriks */
+    function updateMatriksUI() {
+      // 1. Status Distribusi
+      let aktif = 0, isolir = 0, berhenti = 0;
+      dataPelangganList.forEach(p => {
+        const st = (p['Status Layanan'] || '').toLowerCase();
+        if (st === 'aktif') aktif++;
+        else if (st === 'isolir') isolir++;
+        else if (st === 'berhenti') berhenti++;
+      });
+
+      document.getElementById('matriks-status-container').innerHTML = `
+        <div class="flex justify-between items-center p-2 bg-emerald-50 rounded-lg text-emerald-800 font-medium">
+          <span>Aktif</span><span class="font-bold">${aktif}</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-amber-50 rounded-lg text-amber-800 font-medium">
+          <span>Isolir</span><span class="font-bold">${isolir}</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-rose-50 rounded-lg text-rose-800 font-medium">
+          <span>Berhenti</span><span class="font-bold">${berhenti}</span>
+        </div>
+      `;
+
+      // 2. Paket Distribusi
+      const paketCount = {};
+      dataPelangganList.forEach(p => {
+        const pkt = p['Paket WiFi'] || 'Lainnya';
+        paketCount[pkt] = (paketCount[pkt] || 0) + 1;
+      });
+
+      document.getElementById('matriks-paket-container').innerHTML = Object.keys(paketCount).map(pkt => `
+        <div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg text-slate-700">
+          <span class="truncate max-w-[160px]">${pkt}</span><span class="font-bold">${paketCount[pkt]}</span>
+        </div>
+      `).join('') || '<p class="text-slate-400">Belum ada data paket.</p>';
+
+      // 3. Pelanggan Menunggak
+      const nowStr = new Date().toISOString().substring(0, 7);
+      const paidCustSet = new Set();
+      dataPembayaranList.forEach(pb => {
+        if (String(pb['Periode Tagihan']).indexOf(nowStr) === 0 || String(pb['Tgl Bayar']).indexOf(nowStr) === 0) {
+          paidCustSet.add(String(pb['ID Pelanggan']));
+        }
+      });
+
+      const menunggakList = dataPelangganList.filter(p => {
+        return (p['Status Layanan'] || '').toLowerCase() === 'aktif' && !paidCustSet.has(String(p['ID Pelanggan']));
+      });
+
+      document.getElementById('matriks-tagihan-container').innerHTML = `
+        <div class="flex justify-between items-center p-2 bg-emerald-50 rounded-lg text-emerald-800">
+          <span>Lunas Bulan Ini</span><span class="font-bold">${paidCustSet.size}</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-rose-50 rounded-lg text-rose-800">
+          <span>Menunggak</span><span class="font-bold">${menunggakList.length}</span>
+        </div>
+      `;
+
+      const tblMenunggak = document.getElementById('table-matriks-menunggak');
+      if (menunggakList.length === 0) {
+        tblMenunggak.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-emerald-600 font-medium"><i class="fa-solid fa-circle-check mr-1"></i> Semua pelanggan aktif telah melunasi tagihan periode ini.</td></tr>';
+      } else {
+        tblMenunggak.innerHTML = menunggakList.map(p => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3">
+              <div class="font-semibold text-slate-800">${p['Nama Lengkap']}</div>
+              <div class="text-[10px] text-slate-400">${p['ID Pelanggan']}</div>
+            </td>
+            <td class="p-3 text-slate-600">${p['No WhatsApp'] || '-'}</td>
+            <td class="p-3 text-slate-600">${p['Paket WiFi'] || '-'}</td>
+            <td class="p-3 font-bold text-rose-600">${formatRp(p['Biaya Bulanan'])}</td>
+            <td class="p-3 text-right">
+              <button onclick="kirimPengingatWA('${p['ID Pelanggan']}')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-medium">
+                <i class="fa-brands fa-whatsapp mr-1"></i> Ingatkan
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    /* CRUD Pelanggan */
+    function renderTablePelanggan() {
+      const search = (document.getElementById('filter-pelanggan-search').value || '').toLowerCase();
+      const statusFilter = document.getElementById('filter-pelanggan-status').value;
+      const tbody = document.getElementById('table-pelanggan-body');
+
+      const filtered = dataPelangganList.filter(p => {
+        const matchSearch = String(p['Nama Lengkap'] || '').toLowerCase().includes(search) ||
+                            String(p['ID Pelanggan'] || '').toLowerCase().includes(search) ||
+                            String(p['Alamat'] || '').toLowerCase().includes(search) ||
+                            String(p['No WhatsApp'] || '').toLowerCase().includes(search);
+        const matchStatus = !statusFilter || p['Status Layanan'] === statusFilter;
+        return matchSearch && matchStatus;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada data pelanggan yang cocok.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        let badgeColor = 'bg-emerald-50 text-emerald-700';
+        if (p['Status Layanan'] === 'Isolir') badgeColor = 'bg-amber-50 text-amber-700';
+        else if (p['Status Layanan'] === 'Berhenti') badgeColor = 'bg-rose-50 text-rose-700';
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3">
+              <div class="font-bold text-slate-800">${p['Nama Lengkap']}</div>
+              <div class="text-[10px] text-slate-400">${p['ID Pelanggan']}</div>
+            </td>
+            <td class="p-3 text-slate-600 max-w-[150px] truncate" title="${p['Alamat']}">${p['Alamat'] || '-'}</td>
+            <td class="p-3">
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-600">${p['No WhatsApp'] || '-'}</span>
+                ${p['No WhatsApp'] ? `
+                  <button onclick="kirimPengingatWA('${p['ID Pelanggan']}')" title="Kirim Tagihan WhatsApp" class="text-emerald-600 hover:text-emerald-700 p-1">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+            <td class="p-3">
+              <div class="font-medium text-slate-700">${p['Paket WiFi'] || '-'}</div>
+              <div class="text-[10px] font-bold text-blue-600">${formatRp(p['Biaya Bulanan'])}</div>
+            </td>
+            <td class="p-3 text-slate-600">${p['Tgl Jatuh Tempo'] || '-'}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded-full font-semibold text-[10px] ${badgeColor}">${p['Status Layanan'] || 'Aktif'}</span></td>
+            <td class="p-3 text-right space-x-1">
+              <button onclick="editPelanggan('${p['ID Pelanggan']}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button onclick="hapusPelanggan('${p['ID Pelanggan']}')" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function autoCalculateDueDate(tglPasangStr) {
+      if (!tglPasangStr) return;
+      const d = new Date(tglPasangStr);
+      d.setMonth(d.getMonth() + 1);
+      const res = d.toISOString().split('T')[0];
+      const tempoEl = document.getElementById('cust-tempo');
+      if (tempoEl) tempoEl.value = res;
+    }
+
+    function openModalPelanggan(isEdit = false) {
+      document.getElementById('modal-pelanggan-title').innerText = isEdit ? 'Ubah Data Pelanggan' : 'Tambah Pelanggan Baru';
+      document.getElementById('modal-pelanggan').classList.remove('hidden');
+    }
+
+    function closeModalPelanggan() {
+      document.getElementById('modal-pelanggan').classList.add('hidden');
+      document.getElementById('cust-id').value = '';
+      document.getElementById('cust-nama').value = '';
+      document.getElementById('cust-alamat').value = '';
+      document.getElementById('cust-wa').value = '';
+      document.getElementById('cust-catatan').value = '';
+    }
+
+    function syncPaketPriceToForm() {
+      const selectedPaketName = document.getElementById('cust-paket').value;
+      const pkt = dataPaketList.find(p => p['Nama Paket'] === selectedPaketName);
+      if (pkt && document.getElementById('cust-biaya')) {
+        document.getElementById('cust-biaya').value = pkt['Harga'] || 0;
+      }
+    }
+
+    function editPelanggan(id) {
+      const p = dataPelangganList.find(item => item['ID Pelanggan'] === id);
+      if (!p) return;
+      document.getElementById('cust-id').value = p['ID Pelanggan'];
+      document.getElementById('cust-nama').value = p['Nama Lengkap'];
+      document.getElementById('cust-alamat').value = p['Alamat'];
+      document.getElementById('cust-wa').value = p['No WhatsApp'];
+      document.getElementById('cust-paket').value = p['Paket WiFi'];
+      document.getElementById('cust-biaya').value = p['Biaya Bulanan'];
+      document.getElementById('cust-pasang').value = p['Tgl Pemasangan'];
+      document.getElementById('cust-tempo').value = p['Tgl Jatuh Tempo'];
+      document.getElementById('cust-status').value = p['Status Layanan'] || 'Aktif';
+      document.getElementById('cust-catatan').value = p['Catatan'] || '';
+      openModalPelanggan(true);
+    }
+
+    async function handleSavePelanggan(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-save-cust');
+      const id = document.getElementById('cust-id').value;
+      const payload = {
+        id: id,
+        isEdit: !!id,
+        nama: document.getElementById('cust-nama').value.trim(),
+        alamat: document.getElementById('cust-alamat').value.trim(),
+        noWa: document.getElementById('cust-wa').value.trim(),
+        paket: document.getElementById('cust-paket').value,
+        biaya: document.getElementById('cust-biaya').value,
+        tglPasang: document.getElementById('cust-pasang').value,
+        tglJatuhTempo: document.getElementById('cust-tempo').value,
+        status: document.getElementById('cust-status').value,
+        catatan: document.getElementById('cust-catatan').value.trim()
+      };
+
+      btn.disabled = true;
+      btn.innerText = 'Menyimpan...';
+
+      try {
+        const res = await callBackend('apiSavePelanggan', currentToken, payload);
+        if (res && res.success) {
+          closeModalPelanggan();
+          showCustomAlert('Berhasil', res.message, 'success');
+          loadAllAppData();
+        } else {
+          showCustomAlert('Gagal', (res && res.message) || 'Gagal menyimpan pelanggan.', 'error');
+        }
+      } catch (err) {
+        showCustomAlert('Error', err.toString(), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Simpan Data';
+      }
+    }
+
+    function hapusPelanggan(id) {
+      showCustomConfirm('Hapus Pelanggan', `Apakah Anda yakin ingin menghapus data pelanggan ${id}? Tindakan ini tidak dapat dibatalkan.`, async () => {
+        try {
+          const res = await callBackend('apiDeletePelanggan', currentToken, id);
+          if (res && res.success) {
+            showCustomAlert('Dihapus', res.message, 'success');
+            loadAllAppData();
+          } else {
+            showCustomAlert('Gagal', (res && res.message) || 'Gagal menghapus.', 'error');
+          }
+        } catch (err) {
+          showCustomAlert('Error', err.toString(), 'error');
+        }
+      });
+    }
+
+    /* Transaksi Pembayaran */
+    function renderTablePembayaran() {
+      const search = (document.getElementById('filter-bayar-search').value || '').toLowerCase();
+      const tbody = document.getElementById('table-pembayaran-body');
+
+      const filtered = dataPembayaranList.filter(pb => {
+        return String(pb['ID Transaksi'] || '').toLowerCase().includes(search) ||
+               String(pb['Nama Pelanggan'] || '').toLowerCase().includes(search) ||
+               String(pb['Periode Tagihan'] || '').toLowerCase().includes(search);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada data transaksi pembayaran.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(pb => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3 font-semibold text-slate-800">${pb['ID Transaksi']}</td>
+          <td class="p-3 text-slate-600">${pb['Tgl Bayar']}</td>
+          <td class="p-3">
+            <div class="font-bold text-slate-800">${pb['Nama Pelanggan']}</div>
+            <div class="text-[10px] text-slate-400">${pb['ID Pelanggan']}</div>
+          </td>
+          <td class="p-3 text-slate-600">${pb['Periode Tagihan']}</td>
+          <td class="p-3 font-bold text-emerald-600">${formatRp(pb['Jumlah Bayar'])}</td>
+          <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-medium">${pb['Metode Bayar']}</span></td>
+          <td class="p-3 text-right">
+            <button onclick="previewStruk('${pb['ID Transaksi']}')" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-medium">
+              <i class="fa-solid fa-receipt mr-1"></i> Struk
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function populateCustomerSelectForPayment() {
+      const select = document.getElementById('bayar-cust-select');
+      if (!select) return;
+      select.innerHTML = '<option value="">-- Pilih Pelanggan --</option>' +
+        dataPelangganList.map(p => `<option value="${p['ID Pelanggan']}">${p['Nama Lengkap']} (${p['ID Pelanggan']}) - ${p['Paket WiFi']}</option>`).join('');
+    }
+
+    function syncCustomerToPaymentForm() {
+      const custId = document.getElementById('bayar-cust-select').value;
+      const p = dataPelangganList.find(item => item['ID Pelanggan'] === custId);
+      if (p) {
+        document.getElementById('bayar-jumlah').value = p['Biaya Bulanan'] || 0;
+      }
+    }
+
+    function openModalBayar() {
+      document.getElementById('modal-bayar').classList.remove('hidden');
+    }
+
+    function closeModalBayar() {
+      document.getElementById('modal-bayar').classList.add('hidden');
+    }
+
+    async function handleSavePembayaran(e) {
+      e.preventDefault();
+      const custId = document.getElementById('bayar-cust-select').value;
+      const cust = dataPelangganList.find(p => p['ID Pelanggan'] === custId);
+      if (!cust) {
+        showCustomAlert('Perhatian', 'Silakan pilih pelanggan terlebih dahulu.', 'warning');
+        return;
+      }
+
+      const payload = {
+        idPelanggan: custId,
+        namaPelanggan: cust['Nama Lengkap'],
+        tglBayar: document.getElementById('bayar-tgl').value,
+        periode: document.getElementById('bayar-periode').value,
+        jumlah: document.getElementById('bayar-jumlah').value,
+        metode: document.getElementById('bayar-metode').value,
+        keterangan: document.getElementById('bayar-ket').value.trim(),
+        petugas: currentUsername
+      };
+
+      const btn = document.getElementById('btn-submit-bayar');
+      btn.disabled = true;
+      btn.innerText = 'Menyimpan Transaksi...';
+
+      try {
+        const res = await callBackend('apiSavePembayaran', currentToken, payload);
+        if (res && res.success) {
+          closeModalBayar();
+          loadAllAppData();
+          // Buka Struk Otomatis
+          lastActiveStruk = {
+            idTrx: res.data.idTrx,
+            tglBayar: res.data.tglBayar,
+            namaPelanggan: res.data.namaPelanggan,
+            idPelanggan: res.data.idPelanggan,
+            periode: res.data.periode,
+            jumlah: res.data.jumlah,
+            metode: res.data.metode,
+            noWa: cust['No WhatsApp'] || ''
+          };
+          renderStrukToModal(lastActiveStruk);
+        } else {
+          showCustomAlert('Gagal', (res && res.message) || 'Gagal menyimpan pembayaran.', 'error');
+        }
+      } catch (err) {
+        showCustomAlert('Error', err.toString(), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Proses & Cetak Struk';
+      }
+    }
+
+    /* Cetak & Pratinjau Struk */
+    function previewStruk(idTrx) {
+      const trx = dataPembayaranList.find(pb => pb['ID Transaksi'] === idTrx);
+      if (!trx) return;
+      const cust = dataPelangganList.find(p => p['ID Pelanggan'] === trx['ID Pelanggan']);
+
+      lastActiveStruk = {
+        idTrx: trx['ID Transaksi'],
+        tglBayar: trx['Tgl Bayar'],
+        namaPelanggan: trx['Nama Pelanggan'],
+        idPelanggan: trx['ID Pelanggan'],
+        periode: trx['Periode Tagihan'],
+        jumlah: trx['Jumlah Bayar'],
+        metode: trx['Metode Bayar'],
+        noWa: cust ? cust['No WhatsApp'] : ''
+      };
+      renderStrukToModal(lastActiveStruk);
+    }
+
+    function renderStrukToModal(data) {
+      document.getElementById('struk-nama-usaha').innerText = appSettings['NAMA_USAHA'] || 'NEXA WIFI NET';
+      document.getElementById('struk-alamat-usaha').innerText = appSettings['ALAMAT_USAHA'] || 'Layanan Internet Cepat & Stabil';
+      document.getElementById('struk-kontak-usaha').innerText = 'CS: ' + (appSettings['KONTAK_USAHA'] || '-');
+      document.getElementById('struk-footer').innerText = appSettings['FOOTER_STRUK'] || 'Terima kasih atas pembayaran Anda.';
+
+      document.getElementById('struk-no-trx').innerText = data.idTrx;
+      document.getElementById('struk-tgl').innerText = data.tglBayar;
+      document.getElementById('struk-pelanggan').innerText = data.namaPelanggan;
+      document.getElementById('struk-id-cust').innerText = data.idPelanggan;
+      document.getElementById('struk-periode').innerText = data.periode;
+      document.getElementById('struk-jumlah').innerText = formatRp(data.jumlah);
+      document.getElementById('struk-metode').innerText = data.metode;
+
+      document.getElementById('modal-struk').classList.remove('hidden');
+    }
+
+    function closeModalStruk() {
+      document.getElementById('modal-struk').classList.add('hidden');
+    }
+
+    /* Notifikasi WhatsApp (wa.me) */
+    function formatWaNumber(phone) {
+      let cleaned = String(phone || '').replace(/[^0-9]/g, '');
+      if (cleaned.startsWith('0')) {
+        cleaned = '62' + cleaned.substring(1);
+      }
+      return cleaned;
+    }
+
+    function kirimPengingatWA(idPelanggan) {
+      const cust = dataPelangganList.find(p => p['ID Pelanggan'] === idPelanggan);
+      if (!cust || !cust['No WhatsApp']) {
+        showCustomAlert('Informasi', 'Nomor WhatsApp pelanggan belum dicantumkan.', 'warning');
+        return;
+      }
+
+      const phone = formatWaNumber(cust['No WhatsApp']);
+      const namaUsaha = appSettings['NAMA_USAHA'] || 'NEXA WIFI';
+      const pesan = `Halo Bpk/Ibu *${cust['Nama Lengkap']}*,\n\nKami dari *${namaUsaha}* menginformasikan tagihan internet WiFi Anda:\n- ID: *${cust['ID Pelanggan']}*\n- Paket: *${cust['Paket WiFi']}*\n- Jatuh Tempo: *${cust['Tgl Jatuh Tempo']}*\n- Total Tagihan: *${formatRp(cust['Biaya Bulanan'])}*\n\nMohon lakukan pembayaran sebelum jatuh tempo agar jaringan tetap aktif lancar. Terima kasih! 🙏`;
+
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(pesan)}`;
+      window.open(url, '_blank');
+    }
+
+    function kirimStrukWhatsApp() {
+      if (!lastActiveStruk) return;
+      if (!lastActiveStruk.noWa) {
+        showCustomAlert('Nomor Kosong', 'Nomor WhatsApp untuk pelanggan ini tidak ditemukan.', 'warning');
+        return;
+      }
+
+      const phone = formatWaNumber(lastActiveStruk.noWa);
+      const namaUsaha = appSettings['NAMA_USAHA'] || 'NEXA WIFI';
+      const pesan = `*BUKTI PEMBAYARAN INTERNET LUNAS*\n*${namaUsaha}*\n----------------------------------\nNo. Trx : *${lastActiveStruk.idTrx}*\nTanggal : ${lastActiveStruk.tglBayar}\nPelanggan: *${lastActiveStruk.namaPelanggan}* (${lastActiveStruk.idPelanggan})\nPeriode : *${lastActiveStruk.periode}*\nJumlah  : *${formatRp(lastActiveStruk.jumlah)}*\nStatus  : *LUNAS (${lastActiveStruk.metode})*\n----------------------------------\n${appSettings['FOOTER_STRUK'] || 'Terima kasih atas kepercayaan Anda.'}`;
+
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(pesan)}`;
+      window.open(url, '_blank');
+    }
+
+    /* Kas Masuk / Keluar */
+    function renderTableKas() {
+      const tbodyMasuk = document.getElementById('table-kas-masuk-body');
+      const tbodyKeluar = document.getElementById('table-kas-keluar-body');
+
+      const listMasuk = dataKasList.filter(k => (k['Jenis'] || '').toLowerCase() === 'masuk');
+      const listKeluar = dataKasList.filter(k => (k['Jenis'] || '').toLowerCase() === 'keluar');
+
+      tbodyMasuk.innerHTML = listMasuk.length ? listMasuk.map(k => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3 font-semibold text-slate-800">${k['ID Kas']}</td>
+          <td class="p-3 text-slate-600">${k['Tanggal']}</td>
+          <td class="p-3"><span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-semibold rounded">${k['Kategori']}</span></td>
+          <td class="p-3 font-bold text-emerald-600">${formatRp(k['Jumlah'])}</td>
+          <td class="p-3 text-slate-600">${k['Keterangan'] || '-'}</td>
+          <td class="p-3 text-right">
+            <button onclick="hapusKas('${k['ID Kas']}')" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('') : '<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada catatan kas masuk.</td></tr>';
+
+      tbodyKeluar.innerHTML = listKeluar.length ? listKeluar.map(k => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3 font-semibold text-slate-800">${k['ID Kas']}</td>
+          <td class="p-3 text-slate-600">${k['Tanggal']}</td>
+          <td class="p-3"><span class="px-2 py-0.5 bg-rose-50 text-rose-700 font-semibold rounded">${k['Kategori']}</span></td>
+          <td class="p-3 font-bold text-rose-600">${formatRp(k['Jumlah'])}</td>
+          <td class="p-3 text-slate-600">${k['Keterangan'] || '-'}</td>
+          <td class="p-3 text-right">
+            <button onclick="hapusKas('${k['ID Kas']}')" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('') : '<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada catatan kas keluar.</td></tr>';
+    }
+
+    function openModalKas(jenis) {
+      document.getElementById('kas-jenis').value = jenis;
+      document.getElementById('modal-kas-title').innerText = jenis === 'Masuk' ? 'Tambah Catatan Kas Masuk' : 'Tambah Catatan Kas Keluar';
+      document.getElementById('modal-kas-header').className = jenis === 'Masuk' ? 'p-4 bg-emerald-600 text-white flex justify-between items-center' : 'p-4 bg-rose-600 text-white flex justify-between items-center';
+
+      const select = document.getElementById('kas-kategori-select');
+      const filteredKat = dataKategoriList.filter(kat => (kat['Jenis (Masuk/Keluar)'] || '').toLowerCase() === jenis.toLowerCase());
+      select.innerHTML = filteredKat.map(k => `<option value="${k['Nama Kategori']}">${k['Nama Kategori']}</option>`).join('') ||
+        (jenis === 'Masuk' ? '<option value="Penerimaan Lainnya">Penerimaan Lainnya</option>' : '<option value="Operasional Umum">Operasional Umum</option>');
+
+      document.getElementById('modal-kas').classList.remove('hidden');
+    }
+
+    function closeModalKas() {
+      document.getElementById('modal-kas').classList.add('hidden');
+    }
+
+    async function handleSaveKas(e) {
+      e.preventDefault();
+      const payload = {
+        jenis: document.getElementById('kas-jenis').value,
+        tanggal: document.getElementById('kas-tanggal').value,
+        jumlah: document.getElementById('kas-jumlah').value,
+        kategori: document.getElementById('kas-kategori-select').value,
+        keterangan: document.getElementById('kas-keterangan').value.trim(),
+        petugas: currentUsername
+      };
+
+      const btn = document.getElementById('btn-save-kas');
+      btn.disabled = true;
+      btn.innerText = 'Menyimpan...';
+
+      try {
+        const res = await callBackend('apiSaveKas', currentToken, payload);
+        if (res && res.success) {
+          closeModalKas();
+          showCustomAlert('Berhasil', res.message, 'success');
+          loadAllAppData();
+        } else {
+          showCustomAlert('Gagal', (res && res.message) || 'Gagal mencatat kas.', 'error');
+        }
+      } catch (err) {
+        showCustomAlert('Error', err.toString(), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Simpan Entri Kas';
+      }
+    }
+
+    function hapusKas(idKas) {
+      showCustomConfirm('Hapus Entri Kas', `Apakah Anda yakin ingin menghapus data kas ${idKas}?`, async () => {
+        try {
+          const res = await callBackend('apiDeleteKas', currentToken, idKas);
+          if (res && res.success) {
+            showCustomAlert('Dihapus', res.message, 'success');
+            loadAllAppData();
+          } else {
+            showCustomAlert('Gagal', (res && res.message) || 'Gagal menghapus entri kas.', 'error');
+          }
+        } catch (err) {
+          showCustomAlert('Error', err.toString(), 'error');
+        }
+      });
+    }
+
+    /* Pengaturan & Paket */
+    function applySettingsToUI() {
+      if (appSettings['NAMA_USAHA']) {
+        document.getElementById('app-brand-name').innerText = appSettings['NAMA_USAHA'];
+        document.getElementById('setting-nama-usaha').value = appSettings['NAMA_USAHA'];
+      }
+      if (appSettings['ALAMAT_USAHA']) document.getElementById('setting-alamat-usaha').value = appSettings['ALAMAT_USAHA'];
+      if (appSettings['KONTAK_USAHA']) document.getElementById('setting-kontak-usaha').value = appSettings['KONTAK_USAHA'];
+      if (appSettings['FOOTER_STRUK']) document.getElementById('setting-footer-struk').value = appSettings['FOOTER_STRUK'];
+      if (appSettings['BACKGROUND_LOGIN']) {
+        document.getElementById('setting-bg-login').value = appSettings['BACKGROUND_LOGIN'];
+        applyLoginBackground(appSettings['BACKGROUND_LOGIN']);
+      }
+    }
+
+    function applyLoginBackground(url) {
+      if (!url) return;
+      let finalUrl = url;
+      // Konversi otomatis tautan Google Drive
+      if (url.includes('drive.google.com/file/d/')) {
+        const idMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (idMatch && idMatch[1]) {
+          finalUrl = `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+        }
+      }
+      const el = document.getElementById('login-view');
+      if (el) el.style.backgroundImage = `url('${finalUrl}')`;
+    }
+
+    function previewBackgroundSetting() {
+      const url = document.getElementById('setting-bg-login').value.trim();
+      if (!url) {
+        showCustomAlert('URL Kosong', 'Silakan masukkan URL tautan gambar terlebih dahulu.', 'warning');
+        return;
+      }
+      applyLoginBackground(url);
+      showCustomAlert('Pratinjau Sukses', 'Latar belakang login telah diperbarui untuk uji coba visual.', 'success');
+    }
+
+    async function savePengaturanUmum() {
+      const bgUrl = document.getElementById('setting-bg-login').value.trim();
+      const payload = {
+        'NAMA_USAHA': document.getElementById('setting-nama-usaha').value.trim(),
+        'ALAMAT_USAHA': document.getElementById('setting-alamat-usaha').value.trim(),
+        'KONTAK_USAHA': document.getElementById('setting-kontak-usaha').value.trim(),
+        'FOOTER_STRUK': document.getElementById('setting-footer-struk').value.trim(),
+        'BACKGROUND_LOGIN': bgUrl
+      };
+
+      try {
+        const res = await callBackend('apiSavePengaturan', currentToken, payload);
+        if (res && res.success) {
+          safeStorage.setItem('wifi_bg_login', bgUrl);
+          showCustomAlert('Tersimpan', res.message, 'success');
+          loadAllAppData();
+        } else {
+          showCustomAlert('Gagal', (res && res.message) || 'Gagal menyimpan pengaturan.', 'error');
+        }
+      } catch (err) {
+        showCustomAlert('Error', err.toString(), 'error');
+      }
+    }
+
+    async function handleGantiPassword(e) {
+      e.preventDefault();
+      const oldPass = document.getElementById('chg-pass-old').value;
+      const newUser = document.getElementById('chg-user-new').value.trim();
+      const newPass = document.getElementById('chg-pass-new').value;
+
+      try {
+        const res = await callBackend('apiChangeCredentials', currentToken, oldPass, newUser, newPass);
+        if (res && res.success) {
+          showCustomAlert('Sukses', 'Kredensial login berhasil diperbarui! Silakan gunakan username & password baru untuk login berikutnya.', 'success');
+          document.getElementById('chg-pass-old').value = '';
+          document.getElementById('chg-user-new').value = '';
+          document.getElementById('chg-pass-new').value = '';
+        } else {
+          showCustomAlert('Gagal', res.message, 'error');
+        }
+      } catch (err) {
+        showCustomAlert('Error', err.toString(), 'error');
+      }
+    }
+
+    /* Kelola Paket WiFi */
+    function renderTablePaket() {
+      const tbody = document.getElementById('table-paket-body');
+      if (!dataPaketList.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada paket WiFi tersimpan.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = dataPaketList.map(pkt => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-2.5 font-bold text-slate-700">${pkt['ID Paket']}</td>
+          <td class="p-2.5 font-semibold text-slate-800">${pkt['Nama Paket']}</td>
+          <td class="p-2.5 text-slate-600">${pkt['Kecepatan']}</td>
+          <td class="p-2.5 font-bold text-blue-600">${formatRp(pkt['Harga'])}</td>
+          <td class="p-2.5 text-right space-x-1">
+            <button onclick="editPaket('${pkt['ID Paket']}')" class="text-blue-600 hover:bg-blue-50 p-1 rounded"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="hapusPaket('${pkt['ID Paket']}')" class="text-rose-600 hover:bg-rose-50 p-1 rounded"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderPaketOptions() {
+      const select = document.getElementById('cust-paket');
+      if (!select) return;
+      select.innerHTML = dataPaketList.map(pkt => `<option value="${pkt['Nama Paket']}">${pkt['Nama Paket']} (${pkt['Kecepatan']})</option>`).join('');
+      syncPaketPriceToForm();
+    }
+
+    function openModalPaket() {
+      document.getElementById('paket-id').value = '';
+      document.getElementById('paket-nama').value = '';
+      document.getElementById('paket-speed').value = '';
+      document.getElementById('paket-harga').value = '';
+      document.getElementById('modal-paket-title').innerText = 'Tambah Paket WiFi Baru';
+      document.getElementById('modal-paket').classList.remove('hidden');
+    }
+
+    function closeModalPaket() {
+      document.getElementById('modal-paket').classList.add('hidden');
+    }
+
+    function editPaket(idPaket) {
+      const pkt = dataPaketList.find(p => p['ID Paket'] === idPaket);
+      if (!pkt) return;
+      document.getElementById('paket-id').value = pkt['ID Paket'];
+      document.getElementById('paket-nama').value = pkt['Nama Paket'];
+      document.getElementById('paket-speed').value = pkt['Kecepatan'];
+      document.getElementById('paket-harga').value = pkt['Harga'];
+      document.getElementById('modal-paket-title').innerText = 'Ubah Paket WiFi';
+      document.getElementById('modal-paket').classList.remove('hidden');
+    }
+
+    async function handleSavePaket(e) {
+      e.preventDefault();
+      const id = document.getElementById('paket-id').value;
+      const payload = {
+        id: id,
+        isEdit: !!id,
+        nama: document.getElementById('paket-nama').value.trim(),
+        kecepatan: document.getElementById('paket-speed').value.trim(),
+        harga: document.getElementById('paket-harga').value
+      };
+
+      try {
+        const res = await callBackend('apiSavePaket', currentToken, payload);
+        if (res && res.success) {
+          closeModalPaket();
+          showCustomAlert('Berhasil', res.message, 'success');
+          loadAllAppData();
+        } else {
+          showCustomAlert('Gagal', (res && res.message) || 'Gagal menyimpan paket.', 'error');
+        }
+      } catch (err) {
+        showCustomAlert('Error', err.toString(), 'error');
+      }
+    }
+
+    function hapusPaket(idPaket) {
+      showCustomConfirm('Hapus Paket', `Apakah Anda yakin ingin menghapus paket ${idPaket}?`, async () => {
+        try {
+          const res = await callBackend('apiDeletePaket', currentToken, idPaket);
+          if (res && res.success) {
+            showCustomAlert('Dihapus', res.message, 'success');
+            loadAllAppData();
+          } else {
+            showCustomAlert('Gagal', (res && res.message) || 'Gagal menghapus paket.', 'error');
+          }
+        } catch (err) {
+          showCustomAlert('Error', err.toString(), 'error');
+        }
+      });
+    }
+
+    /* Modal Dialog Kustom (No native alert/confirm) */
+    function showCustomAlert(title, message, type = 'info') {
+      const modal = document.getElementById('custom-modal-alert');
+      const icon = document.getElementById('cmodal-icon');
+      const iconWrap = document.getElementById('cmodal-icon-wrapper');
+
+      document.getElementById('cmodal-title').innerText = title;
+      document.getElementById('cmodal-message').innerText = message;
+
+      if (type === 'error') {
+        iconWrap.className = 'w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl bg-rose-100 text-rose-600';
+        icon.className = 'fa-solid fa-triangle-exclamation';
+      } else if (type === 'success') {
+        iconWrap.className = 'w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl bg-emerald-100 text-emerald-600';
+        icon.className = 'fa-solid fa-circle-check';
+      } else if (type === 'warning') {
+        iconWrap.className = 'w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl bg-amber-100 text-amber-600';
+        icon.className = 'fa-solid fa-circle-exclamation';
+      } else {
+        iconWrap.className = 'w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl bg-blue-100 text-blue-600';
+        icon.className = 'fa-solid fa-circle-info';
+      }
+
+      document.getElementById('cmodal-actions').innerHTML = `
+        <button onclick="closeCustomAlert()" class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold">Tutup</button>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function showCustomConfirm(title, message, onConfirm) {
+      const modal = document.getElementById('custom-modal-alert');
+      const icon = document.getElementById('cmodal-icon');
+      const iconWrap = document.getElementById('cmodal-icon-wrapper');
+
+      document.getElementById('cmodal-title').innerText = title;
+      document.getElementById('cmodal-message').innerText = message;
+      iconWrap.className = 'w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl bg-rose-100 text-rose-600';
+      icon.className = 'fa-solid fa-circle-question';
+
+      const actions = document.getElementById('cmodal-actions');
+      actions.innerHTML = `
+        <button id="btn-cmodal-cancel" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium">Batal</button>
+        <button id="btn-cmodal-ok" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold">Ya, Lanjutkan</button>
+      `;
+
+      document.getElementById('btn-cmodal-cancel').onclick = closeCustomAlert;
+      document.getElementById('btn-cmodal-ok').onclick = () => {
+        closeCustomAlert();
+        if (typeof onConfirm === 'function') onConfirm();
+      };
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeCustomAlert() {
+      document.getElementById('custom-modal-alert').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
